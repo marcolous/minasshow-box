@@ -30,6 +30,7 @@ function MinasShowBoxHome() {
   const [qrToken, setQrToken] = useState("");
   const [message, setMessage] = useState("");
   const [isDark, setIsDark] = useState(false);
+  const [showIOSInstallModal, setShowIOSInstallModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,7 +41,15 @@ function MinasShowBoxHome() {
     return () => mq.removeEventListener("change", handler);
   }, []);
 
-  async function handleEnable() {
+  const isIOSDevice = () =>
+    /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.userAgent.includes("Mac") && "ontouchend" in document);
+
+  const isStandaloneMode = () =>
+    window.matchMedia("(display-mode: standalone)").matches ||
+    Boolean((navigator as Navigator & { standalone?: boolean }).standalone);
+
+  async function runEnableFlow() {
     if (!qrToken.trim()) {
       inputRef.current?.focus();
       setMessage("QR token is required 👋");
@@ -129,6 +138,26 @@ function MinasShowBoxHome() {
           : err?.message ?? "Something went wrong. Please try again.",
       );
     }
+  }
+
+  async function handleEnable() {
+    if (typeof window !== "undefined" && isIOSDevice() && !isStandaloneMode()) {
+      setShowIOSInstallModal(true);
+      return;
+    }
+
+    await runEnableFlow();
+  }
+
+  async function handleIOSAddedIt() {
+    setShowIOSInstallModal(false);
+    await runEnableFlow();
+  }
+
+  function handleOpenInSafari() {
+    // iOS does not provide a reliable script API to force-open Safari from
+    // in-app browsers. Opening the current URL in a new tab is the best effort.
+    window.open(window.location.href, "_blank", "noopener,noreferrer");
   }
 
   const canTryAgain = step === "error";
@@ -245,12 +274,82 @@ function MinasShowBoxHome() {
         </p>
       </div>
 
+      {showIOSInstallModal && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/45 backdrop-blur-sm px-3 py-3 sm:p-6 animate-fadeIn">
+          <div className="w-full max-w-md rounded-3xl border border-white/40 dark:border-stone-700/70 bg-white/95 dark:bg-stone-900/95 shadow-2xl shadow-black/30 p-5 sm:p-6 animate-sheetUp">
+            <div className="flex items-center gap-3 mb-3">
+              <div className="h-11 w-11 rounded-2xl bg-gradient-to-br from-amber-400 to-orange-500 flex items-center justify-center text-xl shadow-md">
+                🍎
+              </div>
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-stone-800 dark:text-stone-100">
+                  Enable Notifications on iPhone 🍎
+                </h2>
+              </div>
+            </div>
+
+            <p className="text-sm text-stone-600 dark:text-stone-300 leading-relaxed">
+              To receive anonymous message notifications on iPhone, Apple
+              requires opening MinasShow Box as a Home Screen app.
+            </p>
+
+            <div className="mt-4 space-y-2.5">
+              {[
+                "Open this website in Safari",
+                "Tap the Share button",
+                'Tap "Add to Home Screen"',
+                "Open the app from your Home Screen",
+                'Tap "Enable Notifications"',
+              ].map((item, idx) => (
+                <div
+                  key={item}
+                  className="flex items-start gap-3 rounded-2xl bg-stone-100/80 dark:bg-stone-800/70 p-3 animate-fadeIn"
+                  style={{ animationDelay: `${idx * 70}ms` }}
+                >
+                  <div className="mt-0.5 h-6 w-6 shrink-0 rounded-full bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold flex items-center justify-center">
+                    {idx + 1}
+                  </div>
+                  <p className="text-sm text-stone-700 dark:text-stone-200">
+                    {item}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <p className="mt-4 text-xs leading-relaxed text-amber-700 dark:text-amber-300 bg-amber-50/90 dark:bg-amber-950/40 border border-amber-200/70 dark:border-amber-900/50 rounded-xl p-3">
+              Notifications won't work inside Instagram, WhatsApp, or normal
+              browser tabs on iPhone.
+            </p>
+
+            <div className="mt-5 flex flex-col sm:flex-row gap-2.5">
+              <button
+                onClick={handleIOSAddedIt}
+                className="flex-1 py-3 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-[0.99] transition-all shadow-lg shadow-amber-500/30"
+              >
+                I Added It
+              </button>
+              <button
+                onClick={handleOpenInSafari}
+                className="flex-1 py-3 rounded-xl font-semibold text-sm border border-stone-300 dark:border-stone-600 text-stone-700 dark:text-stone-200 bg-white/80 dark:bg-stone-800/80 hover:bg-stone-50 dark:hover:bg-stone-800 transition"
+              >
+                Open in Safari
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(12px); }
           to   { opacity: 1; transform: translateY(0); }
         }
+        @keyframes sheetUp {
+          from { opacity: 0; transform: translateY(24px) scale(0.98); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
         .animate-fadeIn { animation: fadeIn 0.4s ease both; }
+        .animate-sheetUp { animation: sheetUp 0.35s ease both; }
       `}</style>
     </div>
   );
