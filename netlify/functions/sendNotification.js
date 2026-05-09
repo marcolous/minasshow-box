@@ -85,4 +85,4 @@ module.exports.handler = async function (event) {
         error instanceof Error ? error.message : "Failed to send notification.",
     });
   }
-}; 
+};
