@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#7c5c3e" />
+  <title>MinasShow Box · Notify</title>
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --amber-500: #f59e0b;
+      --orange-500: #f97316;
+      --stone-50:  #fafaf9;
+      --stone-100: #f5f5f4;
+      --stone-200: #e7e5e4;
+      --stone-400: #a8a29e;
+      --stone-500: #78716c;
+      --stone-700: #44403c;
+      --stone-800: #292524;
+      --stone-900: #1c1917;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-from: #0c0a09;
+        --bg-via: #1c1917;
+        --card-bg: rgba(28,25,23,0.85);
+        --card-border: rgba(68,64,60,0.5);
+        --text-primary: #f5f5f4;
+        --text-secondary: #a8a29e;
+      }
+    }
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg-from: #fffbeb;
+        --bg-via: #fff7ed;
+        --card-bg: rgba(255,255,255,0.85);
+        --card-border: rgba(255,255,255,0.6);
+        --text-primary: #292524;
+        --text-secondary: #78716c;
+      }
+    }
+
+    body {
+      min-height: 100dvh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      -webkit-font-smoothing: antialiased;
+      background: linear-gradient(135deg, var(--bg-from), var(--bg-via), #d6d3d1);
+      color: var(--text-primary);
+    }
+
+    /* ── Glow ── */
+    .glow {
+      position: fixed;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 380px; height: 260px;
+      background: radial-gradient(ellipse, rgba(245,158,11,0.18), transparent 70%);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Card ── */
+    .card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 360px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 36px 28px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+      box-shadow: 0 24px 60px rgba(0,0,0,0.12), 0 4px 16px rgba(0,0,0,0.06);
+      animation: fadeIn 0.45s ease both;
+    }
+
+    /* ── Icon ── */
+    .icon {
+      width: 76px; height: 76px;
+      border-radius: 20px;
+      background: linear-gradient(135deg, #f59e0b, #f97316);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 38px;
+      box-shadow: 0 8px 24px rgba(245,158,11,0.35);
+      user-select: none;
+    }
+
+    /* ── Typography ── */
+    .title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+      color: var(--text-primary);
+      text-align: center;
+    }
+    .subtitle {
+      font-size: 13px;
+      color: var(--text-secondary);
+      text-align: center;
+      line-height: 1.5;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      width: 100%;
+      height: 1px;
+      background: var(--stone-200);
+      opacity: 0.5;
+    }
+
+    /* ── States ── */
+    .state { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+    .state-icon { font-size: 52px; }
+
+    /* Spinner */
+    .spinner-wrap { display: flex; align-items: center; gap: 10px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 32px; height: 32px;
+      border: 3px solid rgba(245,158,11,0.25);
+      border-top-color: #f59e0b;
+      border-radius: 50%;
+      animation: spin 0.75s linear infinite;
+    }
+
+    /* ── Footer ── */
+    .footer {
+      position: relative; z-index: 1;
+      margin-top: 28px;
+      font-size: 11px;
+      color: var(--text-secondary);
+      opacity: 0.6;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(14px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .bounce { animation: bounce 1s infinite; }
+    @keyframes bounce {
+      0%,100% { transform: translateY(0); }
+      50%      { transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+  <div class="glow"></div>
+
+  <div class="card" id="card">
+    <!-- Icon -->
+    <div class="icon">💌</div>
+
+    <!-- Title -->
+    <div style="text-align:center; display:flex; flex-direction:column; gap:4px;">
+      <h1 class="title">MinasShow Box</h1>
+      <p class="subtitle">Sending your anonymous message…</p>
+    </div>
+
+    <div class="divider"></div>
+
+    <!-- Dynamic state area -->
+    <div class="state" id="stateArea">
+      <div class="spinner-wrap">
+        <div class="spinner"></div>
+        <span class="subtitle">Please wait</span>
+      </div>
+    </div>
+  </div>
+
+  <p class="footer">MinasShow Box · Church Community</p>
+
+  <script>
+    // ─── CONFIGURATION ────────────────────────────────────────────────────────
+    // Replace with your actual webhook endpoint URL
+    const WEBHOOK_URL = 'https://hook.eu1.make.com/4u17ygiveikn9kg00kgnw4e3k7ouqau9';
+    // ──────────────────────────────────────────────────────────────────────────
+
+    const stateArea = document.getElementById('stateArea');
+
+    function showSuccess() {
+      stateArea.innerHTML = `
+        <div class="state-icon bounce">✅</div>
+        <p class="title" style="font-size:16px;">Notification sent anonymously</p>
+        <p class="subtitle">The box owner has been notified that someone left them a message in church. 🙏</p>
+      `;
+    }
+
+    function showError(msg) {
+      stateArea.innerHTML = `
+        <div class="state-icon">⚠️</div>
+        <p class="title" style="font-size:16px; color:#ef4444;">Something went wrong</p>
+        <p class="subtitle">${msg ?? 'Please try again later.'}</p>
+      `;
+    }
+
+    async function sendNotification() {
+      // Read the token from the URL query param: /notify.html?token=TOKEN
+      const params = new URLSearchParams(window.location.search);
+      const token = params.get('token');
+
+      if (!token) {
+        showError('No recipient token found in URL. Check your QR code.');
+        return;
+      }
+
+      try {
+        const res = await fetch(WEBHOOK_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            token,
+            triggeredAt: new Date().toISOString(),
+            // Push notification payload (handled server-side)
+            notification: {
+              title: '💌 MinasShow Box',
+              body: 'Someone left you a message in church. Go check your box 👀',
+            },
+          }),
+        });
+
+        if (!res.ok) throw new Error(`Server responded with ${res.status}`);
+
+        showSuccess();
+      } catch (err) {
+        console.error(err);
+        showError(err?.message ?? 'Network error.');
+      }
+    }
+
+    // Run automatically on page load
+    sendNotification();
+  </script>
+</body>
+</html>

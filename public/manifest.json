@@ -1,0 +1,22 @@
+{
+  "name": "MinasShow Box",
+  "short_name": "MinasShow",
+  "description": "Receive anonymous church box notifications",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#f59e0b",
+  "background_color": "#fffbeb",
+  "icons": [
+    {
+      "src": "/logo.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
