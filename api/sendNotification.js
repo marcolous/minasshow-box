@@ -69,7 +69,7 @@ export default async function handler(req, res) {
     const message = {
       token: deviceToken,
       notification: {
-        title: "💌 Church Box",
+        title: "💌 MinasShow Box",
         body: "💌 حد سابلك رسالة جميلة في الكنيسة\n\nروح شوف البوكس بتاعك 👀",
       },
     };

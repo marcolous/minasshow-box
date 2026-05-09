@@ -52,6 +52,18 @@ function MinasShowBoxHome() {
     setMessage("");
 
     try {
+      if (typeof window === "undefined" || !("Notification" in window)) {
+        throw new Error(
+          "Push notifications are not supported in this browser.",
+        );
+      }
+
+      if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+        throw new Error(
+          "This browser does not support service worker push notifications.",
+        );
+      }
+
       // 1. Request browser notification permission
       const permission = await Notification.requestPermission();
       if (permission !== "granted") {
@@ -106,7 +118,16 @@ function MinasShowBoxHome() {
     } catch (err: any) {
       console.error(err);
       setStep("error");
-      setMessage(err?.message ?? "Something went wrong. Please try again.");
+      const rawMessage = String(err?.message ?? "");
+      const isIOSSupportGap =
+        /Notification is not defined|can't find variable: notification/i.test(
+          rawMessage,
+        );
+      setMessage(
+        isIOSSupportGap
+          ? "This iPhone browser does not support web push here. Use Safari, add this site to Home Screen, then enable notifications from the app icon."
+          : err?.message ?? "Something went wrong. Please try again.",
+      );
     }
   }
 
