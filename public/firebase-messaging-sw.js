@@ -29,6 +29,12 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw] Received background message:', payload);
 
+  // If the server payload includes FCM's `notification` block, the browser
+  // already shows it — calling showNotification() here would duplicate it.
+  if (payload.notification) {
+    return;
+  }
+
   const notificationTitle = payload.notification?.title ?? '💌 MinasShow Box';
   const notificationOptions = {
     body: payload.notification?.body ?? 'Someone left you a message in church. Go check your box 👀',
