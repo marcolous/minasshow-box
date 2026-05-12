@@ -29,21 +29,32 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw] Received background message:', payload);
 
-  // If the server payload includes FCM's `notification` block, the browser
-  // already shows it — calling showNotification() here would duplicate it.
-  if (payload.notification) {
+  const data = payload.data || {};
+  const notificationTitle =
+    (typeof data.title === 'string' && data.title) ||
+    payload.notification?.title ||
+    '💌 MinasShow Box';
+  const notificationBody =
+    (typeof data.body === 'string' && data.body) ||
+    payload.notification?.body ||
+    'Someone left you a message in church. Go check your box 👀';
+  const openUrl =
+    (typeof data.url === 'string' && data.url) || '/';
+
+  // Data-only sends: show exactly once here.
+  // Legacy `notification` payloads: platform may auto-display; avoid double UI.
+  if (payload.notification && !(data.title || data.body)) {
     return;
   }
 
-  const notificationTitle = payload.notification?.title ?? '💌 MinasShow Box';
   const notificationOptions = {
-    body: payload.notification?.body ?? 'Someone left you a message in church. Go check your box 👀',
+    body: notificationBody,
     icon: '/logo.png',
     badge: '/favicon.ico',
     vibrate: [200, 100, 200],
     tag: 'minasshow-box-message',
-    // Clicking the notification opens the app
-    data: { url: '/' },
+    renotify: false,
+    data: { url: openUrl },
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
