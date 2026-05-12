@@ -7,7 +7,7 @@ import admin from "firebase-admin";
 // - FIREBASE_CLIENT_EMAIL
 // - FIREBASE_PRIVATE_KEY
 
-/** Same push for every recipient — edit here only. */
+/** Same push for every recipient — edit here only (matches 10b9066 FCM shape). */
 const DEFAULT_NOTIFICATION_TITLE = "💌 MinasShow Box";
 const DEFAULT_NOTIFICATION_BODY =
   "روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀";
@@ -72,13 +72,14 @@ export default async function handler(req, res) {
   try {
     initFirebaseAdmin();
 
-    // Web: data-only so the service worker shows exactly once (see firebase-messaging-sw.js).
+    // FCM `notification` block: OS shows title/body (Arabic works reliably here).
+    // firebase-messaging-sw.js must NOT call showNotification() for this payload
+    // (see commit 10b9066) or users get duplicate toasts.
     const message = {
       token: deviceToken,
-      data: {
-        push_title: DEFAULT_NOTIFICATION_TITLE,
-        push_body: DEFAULT_NOTIFICATION_BODY,
-        url: "/",
+      notification: {
+        title: DEFAULT_NOTIFICATION_TITLE,
+        body: DEFAULT_NOTIFICATION_BODY,
       },
     };
 

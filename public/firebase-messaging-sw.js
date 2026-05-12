@@ -29,41 +29,20 @@ const messaging = firebase.messaging();
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw] Received background message:', payload);
 
-  const data = payload.data || {};
-  const DEFAULT_TITLE = '💌 MinasShow Box';
-  const DEFAULT_BODY =
-    'روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀';
-
-  const notificationTitle =
-    (typeof data.push_title === 'string' && data.push_title) ||
-    (typeof data.title === 'string' && data.title) ||
-    payload.notification?.title ||
-    DEFAULT_TITLE;
-  const notificationBody =
-    (typeof data.push_body === 'string' && data.push_body) ||
-    (typeof data.body === 'string' && data.body) ||
-    payload.notification?.body ||
-    DEFAULT_BODY;
-  const openUrl =
-    (typeof data.url === 'string' && data.url) || '/';
-
-  // Data-only sends: show exactly once here.
-  // Legacy `notification` payloads: platform may auto-display; avoid double UI.
-  if (
-    payload.notification &&
-    !(data.push_title || data.push_body || data.title || data.body)
-  ) {
+  // If the server sends FCM's `notification` block, the OS already shows it.
+  // Calling showNotification() here duplicates (see commit 10b9066).
+  if (payload.notification) {
     return;
   }
 
+  const notificationTitle = '💌 MinasShow Box';
   const notificationOptions = {
-    body: notificationBody,
+    body: 'روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀',
     icon: '/logo.png',
     badge: '/favicon.ico',
     vibrate: [200, 100, 200],
     tag: 'minasshow-box-message',
-    renotify: false,
-    data: { url: openUrl },
+    data: { url: '/' },
   };
 
   self.registration.showNotification(notificationTitle, notificationOptions);
@@ -77,13 +56,11 @@ self.addEventListener('notificationclick', (event) => {
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // If there is already a window open, focus it
       for (const client of clientList) {
         if (client.url.includes(self.location.origin) && 'focus' in client) {
           return client.focus();
         }
       }
-      // Otherwise open a new window
       if (clients.openWindow) {
         return clients.openWindow(targetUrl);
       }
