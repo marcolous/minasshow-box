@@ -184,10 +184,8 @@
   <p class="footer">MinasShow Box · Church Community</p>
 
   <script>
-    // ─── CONFIGURATION ────────────────────────────────────────────────────────
-    // Replace with your actual webhook endpoint URL
-    const WEBHOOK_URL = 'https://hook.eu1.make.com/4u17ygiveikn9kg00kgnw4e3k7ouqau9';
-    // ──────────────────────────────────────────────────────────────────────────
+    // Webhook URLs come from /make-accounts.json (switch accounts there).
+    // Optional: ?makeAccount=marcolous11 or ?makeAccount=louismarco226
 
     const stateArea = document.getElementById('stateArea');
 
@@ -207,6 +205,25 @@
       `;
     }
 
+    async function resolveNotifyWebhook() {
+      const params = new URLSearchParams(window.location.search);
+      const accountOverride = params.get('makeAccount');
+      const res = await fetch('/make-accounts.json', { cache: 'no-store' });
+      if (!res.ok) {
+        throw new Error('Could not load /make-accounts.json');
+      }
+      const json = await res.json();
+      const active =
+        (accountOverride && json.accounts && json.accounts[accountOverride]
+          ? accountOverride
+          : json.active || '').trim();
+      const entry = json.accounts && json.accounts[active];
+      if (!entry || !entry.notify) {
+        throw new Error('Missing notify URL for account: ' + active);
+      }
+      return entry.notify.trim();
+    }
+
     async function sendNotification() {
       // Read the token from the URL query param: /notify.html?token=TOKEN
       const params = new URLSearchParams(window.location.search);
@@ -218,7 +235,8 @@
       }
 
       try {
-        const res = await fetch(WEBHOOK_URL, {
+        const notifyUrl = await resolveNotifyWebhook();
+        const res = await fetch(notifyUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({

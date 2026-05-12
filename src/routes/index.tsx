@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
+import { loadMakeWebhooks } from "@/config/makeWebhooks";
 
 export const Route = createFileRoute("/")({
   component: MinasShowBoxHome,
@@ -18,9 +19,6 @@ const FIREBASE_CONFIG = {
 const VAPID_KEY =
   "BBVvVafjBHZYL7gK2-SGwRi4GLg2lQurM--ppCPOaS7QHOsdf_yZjQKd_a0SLpl0YT4M7KEGWbxZxThYv72CRjo";
 
-// Replace this with your webhook endpoint URL
-const WEBHOOK_URL =
-  "https://hook.eu1.make.com/77iimiyku2sbser40njhtm8bmp6fu7yo";
 // ─────────────────────────────────────────────────────────────────────────────
 
 type Step = "idle" | "loading" | "success" | "error";
@@ -31,6 +29,9 @@ function MinasShowBoxHome() {
   const [message, setMessage] = useState("");
   const [isDark, setIsDark] = useState(false);
   const [showIOSInstallModal, setShowIOSInstallModal] = useState(false);
+  const [makeAccountLabel, setMakeAccountLabel] = useState<string | null>(null);
+  const [makeConfigError, setMakeConfigError] = useState<string | null>(null);
+  const makeAccountOverrideRef = useRef<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -39,6 +40,21 @@ function MinasShowBoxHome() {
     const handler = (e: MediaQueryListEvent) => setIsDark(e.matches);
     mq.addEventListener("change", handler);
     return () => mq.removeEventListener("change", handler);
+  }, []);
+
+  useEffect(() => {
+    const q = new URLSearchParams(window.location.search).get("makeAccount");
+    makeAccountOverrideRef.current = q?.trim() || null;
+    loadMakeWebhooks(makeAccountOverrideRef.current)
+      .then((c) => {
+        setMakeAccountLabel(c.active);
+        setMakeConfigError(null);
+      })
+      .catch((err: unknown) => {
+        setMakeConfigError(
+          err instanceof Error ? err.message : "Failed to load Make.com config.",
+        );
+      });
   }, []);
 
   const isIOSDevice = () =>
@@ -109,8 +125,11 @@ function MinasShowBoxHome() {
         throw new Error("Failed to get FCM token");
       }
 
-      // 4. Send token + qrToken to webhook
-      const res = await fetch(WEBHOOK_URL, {
+      // 4. Send token + qrToken to register webhook (Make.com)
+      const { register: registerWebhook } = await loadMakeWebhooks(
+        makeAccountOverrideRef.current,
+      );
+      const res = await fetch(registerWebhook, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -222,7 +241,7 @@ function MinasShowBoxHome() {
                   onChange={(e) => setQrToken(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleEnable()}
                   placeholder="Enter your QR token"
-                  disabled={step === "loading"}
+                  disabled={step === "loading" || !!makeConfigError}
                   className="w-full px-4 py-3 rounded-xl border border-stone-200 dark:border-stone-700 bg-white/70 dark:bg-stone-800/70 text-stone-800 dark:text-stone-100 placeholder-stone-400 dark:placeholder-stone-500 text-sm focus:outline-none focus:ring-2 focus:ring-amber-400 dark:focus:ring-amber-500 transition disabled:opacity-50"
                 />
               </div>
@@ -245,7 +264,7 @@ function MinasShowBoxHome() {
                       }
                     : handleEnable
                 }
-                disabled={step === "loading"}
+                disabled={step === "loading" || !!makeConfigError}
                 className="w-full py-3.5 rounded-xl font-semibold text-sm text-white bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 active:scale-95 shadow-lg shadow-amber-500/30 transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {step === "loading" ? (
@@ -264,6 +283,19 @@ function MinasShowBoxHome() {
                 Notifications are completely anonymous. We never share your
                 info.
               </p>
+              {makeConfigError && (
+                <p className="text-center text-xs text-red-500 px-1">
+                  {makeConfigError}
+                </p>
+              )}
+              {makeAccountLabel && !makeConfigError && (
+                <p className="text-center text-[11px] text-stone-400 dark:text-stone-500">
+                  Make.com account:{" "}
+                  <span className="font-medium text-stone-600 dark:text-stone-400">
+                    {makeAccountLabel}
+                  </span>
+                </p>
+              )}
             </div>
           )}
         </div>
