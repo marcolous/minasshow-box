@@ -242,11 +242,7 @@
           body: JSON.stringify({
             token,
             triggeredAt: new Date().toISOString(),
-            // Push notification payload (handled server-side)
-            notification: {
-              title: '💌 MinasShow Box',
-              body: 'روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀',
-            },
+            // Push title/body are fixed in api/sendNotification.js for everyone.
           }),
         });
 

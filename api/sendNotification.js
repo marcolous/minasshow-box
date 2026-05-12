@@ -6,6 +6,12 @@ import admin from "firebase-admin";
 // - FIREBASE_PROJECT_ID
 // - FIREBASE_CLIENT_EMAIL
 // - FIREBASE_PRIVATE_KEY
+
+/** Same push for every recipient — edit here only. */
+const DEFAULT_NOTIFICATION_TITLE = "💌 MinasShow Box";
+const DEFAULT_NOTIFICATION_BODY =
+  "روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀";
+
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
 const privateKey = process.env.FIREBASE_PRIVATE_KEY
@@ -55,7 +61,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const { deviceToken, title, body: bodyTextFromClient, notification } = body;
+  const { deviceToken } = body;
   if (!deviceToken || typeof deviceToken !== "string") {
     return res.status(400).json({
       success: false,
@@ -66,51 +72,12 @@ export default async function handler(req, res) {
   try {
     initFirebaseAdmin();
 
-    const nested =
-      notification &&
-      typeof notification === "object" &&
-      !Array.isArray(notification)
-        ? notification
-        : null;
-
-    const titleFromFlat =
-      typeof title === "string" ? title.trim() : "";
-    const titleFromNested =
-      nested && typeof nested.title === "string"
-        ? nested.title.trim()
-        : "";
-    const notificationTitle =
-      titleFromFlat || titleFromNested || "💌 MinasShow Box";
-
-    const bodyFromFlat =
-      typeof bodyTextFromClient === "string" ? bodyTextFromClient.trim() : "";
-    const bodyFromNested =
-      nested && typeof nested.body === "string" ? nested.body.trim() : "";
-
-    const DEFAULT_BODY =
-      "روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀";
-
-    // Make.com (or older clients) often hard-code the old English line in the
-    // HTTP module JSON. Treat it as "no custom body" so Arabic default wins.
-    const legacyEnglish =
-      /^someone left you a message in church\.?\s*go check your box/i;
-    const rawBody = bodyFromFlat || bodyFromNested;
-    const notificationBody =
-      rawBody && !legacyEnglish.test(rawBody)
-        ? rawBody
-        : DEFAULT_BODY;
-
-    // Web: use data-only payloads so only the service worker calls
-    // showNotification() once. Top-level `notification` can still be shown
-    // automatically by the platform, which often looks like "duplicate" pushes.
-
-    // Avoid key name "body" inside FCM `data` — it can fail to reach the SW on
-    // some Web/FCM paths; use explicit keys instead.
+    // Web: data-only so the service worker shows exactly once (see firebase-messaging-sw.js).
     const message = {
       token: deviceToken,
       data: {
-        push_title: notificationTitle,
-        push_body: notificationBody,
+        push_title: DEFAULT_NOTIFICATION_TITLE,
+        push_body: DEFAULT_NOTIFICATION_BODY,
         url: "/",
       },
     };
