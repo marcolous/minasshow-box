@@ -70,7 +70,7 @@ export default async function handler(req, res) {
       token: deviceToken,
       notification: {
         title: "💌 MinasShow Box",
-        body: "💌 حد سابلك رسالة جميلة في الكنيسة\n\nروح شوف البوكس بتاعك 👀",
+        body: "روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀",
       },
     };
 
