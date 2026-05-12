@@ -86,10 +86,19 @@ export default async function handler(req, res) {
       typeof bodyTextFromClient === "string" ? bodyTextFromClient.trim() : "";
     const bodyFromNested =
       nested && typeof nested.body === "string" ? nested.body.trim() : "";
-    const notificationBody =
-      bodyFromFlat ||
-      bodyFromNested ||
+
+    const DEFAULT_BODY =
       "روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀";
+
+    // Make.com (or older clients) often hard-code the old English line in the
+    // HTTP module JSON. Treat it as "no custom body" so Arabic default wins.
+    const legacyEnglish =
+      /^someone left you a message in church\.?\s*go check your box/i;
+    const rawBody = bodyFromFlat || bodyFromNested;
+    const notificationBody =
+      rawBody && !legacyEnglish.test(rawBody)
+        ? rawBody
+        : DEFAULT_BODY;
 
     // Web: use data-only payloads so only the service worker calls
     // showNotification() once. Top-level `notification` can still be shown
