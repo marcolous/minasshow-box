@@ -55,7 +55,7 @@ export default async function handler(req, res) {
     }
   }
 
-  const { deviceToken, title, body: bodyTextFromClient } = body;
+  const { deviceToken, title, body: bodyTextFromClient, notification } = body;
   if (!deviceToken || typeof deviceToken !== "string") {
     return res.status(400).json({
       success: false,
@@ -66,23 +66,42 @@ export default async function handler(req, res) {
   try {
     initFirebaseAdmin();
 
+    const nested =
+      notification &&
+      typeof notification === "object" &&
+      !Array.isArray(notification)
+        ? notification
+        : null;
+
+    const titleFromFlat =
+      typeof title === "string" ? title.trim() : "";
+    const titleFromNested =
+      nested && typeof nested.title === "string"
+        ? nested.title.trim()
+        : "";
+    const notificationTitle =
+      titleFromFlat || titleFromNested || "💌 MinasShow Box";
+
+    const bodyFromFlat =
+      typeof bodyTextFromClient === "string" ? bodyTextFromClient.trim() : "";
+    const bodyFromNested =
+      nested && typeof nested.body === "string" ? nested.body.trim() : "";
+    const notificationBody =
+      bodyFromFlat ||
+      bodyFromNested ||
+      "روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀";
+
     // Web: use data-only payloads so only the service worker calls
     // showNotification() once. Top-level `notification` can still be shown
     // automatically by the platform, which often looks like "duplicate" pushes.
-    const notificationTitle =
-      typeof title === "string" && title.trim()
-        ? title.trim()
-        : "💌 MinasShow Box";
-    const notificationBody =
-      typeof bodyTextFromClient === "string" && bodyTextFromClient.trim()
-        ? bodyTextFromClient.trim()
-        : "روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀";
 
+    // Avoid key name "body" inside FCM `data` — it can fail to reach the SW on
+    // some Web/FCM paths; use explicit keys instead.
     const message = {
       token: deviceToken,
       data: {
-        title: notificationTitle,
-        body: notificationBody,
+        push_title: notificationTitle,
+        push_body: notificationBody,
         url: "/",
       },
     };

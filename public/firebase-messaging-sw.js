@@ -30,20 +30,29 @@ messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw] Received background message:', payload);
 
   const data = payload.data || {};
+  const DEFAULT_TITLE = '💌 MinasShow Box';
+  const DEFAULT_BODY =
+    'روح شوف البوكس بتاعك.\n\nفي رسالة جديدة مستنياك في أوضة العرايس 👀';
+
   const notificationTitle =
+    (typeof data.push_title === 'string' && data.push_title) ||
     (typeof data.title === 'string' && data.title) ||
     payload.notification?.title ||
-    '💌 MinasShow Box';
+    DEFAULT_TITLE;
   const notificationBody =
+    (typeof data.push_body === 'string' && data.push_body) ||
     (typeof data.body === 'string' && data.body) ||
     payload.notification?.body ||
-    'Someone left you a message in church. Go check your box 👀';
+    DEFAULT_BODY;
   const openUrl =
     (typeof data.url === 'string' && data.url) || '/';
 
   // Data-only sends: show exactly once here.
   // Legacy `notification` payloads: platform may auto-display; avoid double UI.
-  if (payload.notification && !(data.title || data.body)) {
+  if (
+    payload.notification &&
+    !(data.push_title || data.push_body || data.title || data.body)
+  ) {
     return;
   }
 
